@@ -1,14 +1,12 @@
-import os
 
-from fastapi import FastAPI, HTTPException
-from sqlalchemy import create_engine, text
+from fastapi import Depends, FastAPI, HTTPException
+from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
+from sqlmodel import Session
+
+from database import get_session
 
 app = FastAPI()
-
-DATABASE_URL = os.environ["DATABASE_URL"]
-
-engine = create_engine(DATABASE_URL, pool_pre_ping=True)
 
 
 @app.get("/")
@@ -17,10 +15,9 @@ def root():
 
 
 @app.get("/db-check")
-def db_check():
+def db_check(session: Session = Depends(get_session)):
     try:
-        with engine.connect() as connection:
-            result = connection.execute(text("SELECT 1")).scalar_one()
+        result = session.exec(text("SELECT 1")).scalar_one()
 
         return {
             "status": "ok",
